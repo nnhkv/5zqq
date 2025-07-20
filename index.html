@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏导航中心</title>
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        /* 头部样式 */
+        header {
+            background-color: #4a6ea9;
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        /* 主内容区样式 */
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        
+        .game-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .game-card {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .game-image {
+            height: 200px;
+            background-color: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #999;
+        }
+        
+        .game-info {
+            padding: 1.5rem;
+        }
+        
+        .game-info h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+        
+        .game-info p {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        
+        .play-btn {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            font-weight: bold;
+        }
+        
+        .play-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        /* 规则模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+            position: relative;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .close-btn:hover {
+            color: #333;
+        }
+        
+        .modal-content h2 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+        
+        .modal-content h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #34495e;
+        }
+        
+        .modal-content p {
+            margin-bottom: 1rem;
+            color: #666;
+        }
+        
+        .modal-content ul {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+        
+        .modal-content li {
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+        
+        /* 页脚样式 */
+        footer {
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+            
+            .game-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>游戏导航中心</h1>
+        <p>与强大的AI对手一起体验经典棋类游戏的乐趣</p>
+    </header>
+    
+    <main>
+        <div class="game-container">
+            <!-- 五子棋 -->
+            <div class="game-card" onclick="showRules('gomoku')">
+                <div class="game-image">
+                    <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="10" y="10" width="80" height="80" rx="5" fill="#E0E0E0"/>
+                        <line x1="20" y1="20" x2="80" y2="80" stroke="#999" stroke-width="2"/>
+                        <line x1="80" y1="20" x2="20" y2="80" stroke="#999" stroke-width="2"/>
+                        <circle cx="50" cy="50" r="10" fill="#333"/>
+                        <circle cx="30" cy="30" r="8" fill="white" stroke="#333" stroke-width="1"/>
+                        <circle cx="70" cy="70" r="8" fill="white" stroke="#333" stroke-width="1"/>
+                    </svg>
+                </div>
+                <div class="game-info">
+                    <h2>五子棋</h2>
+                    <p>经典的黑白棋类游戏，先形成五个连续同色棋子的一方获胜。</p>
+                    <a href="#" class="play-btn" onclick="startGame('gomoku'); return false;">开始游戏</a>
+                </div>
+            </div>
+            
+            <!-- 中国象棋 -->
+            <div class="game-card" onclick="showRules('chinesechess')">
+                <div class="game-image">
+                    <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="10" y="10" width="80" height="80" rx="5" fill="#E0E0E0"/>
+                        <line x1="10" y1="50" x2="90" y2="50" stroke="#999" stroke-width="2"/>
+                        <line x1="30" y1="10" x2="30" y2="90" stroke="#999" stroke-width="1"/>
+                        <line x1="50" y1="10" x2="50" y2="90" stroke="#999" stroke-width="1"/>
+                        <line x1="70" y1="10" x2="70" y2="90" stroke="#999" stroke-width="1"/>
+                        <circle cx="30" cy="30" r="8" fill="#C0392B"/>
+                        <circle cx="70" cy="70" r="8" fill="#2C3E50"/>
+                    </svg>
+                </div>
+                <div class="game-info">
+                    <h2>中国象棋</h2>
+                    <p>有着悠久历史的传统棋类游戏，考验策略和战术能力。</p>
+                    <a href="#" class="play-btn" onclick="startGame('chinesechess'); return false;">开始游戏</a>
+                </div>
+            </div>
+            
+            <!-- 国际象棋 -->
+            <div class="game-card" onclick="showRules('chess')">
+                <div class="game-image">
+                    <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="10" y="10" width="80" height="80" rx="5" fill="#E0E0E0"/>
+                        <rect x="10" y="10" width="40" height="40" fill="#999"/>
+                        <rect x="50" y="50" width="40" height="40" fill="#999"/>
+                        <path d="M30 20L40 30L30 40L20 30L30 20Z" fill="#C0392B"/>
+                        <circle cx="70" cy="70" r="10" fill="#2C3E50"/>
+                    </svg>
+                </div>
+                <div class="game-info">
+                    <h2>国际象棋</h2>
+                    <p>世界范围内广泛流行的棋类游戏，被誉为"智慧的体操"。</p>
+                    <a href="#" class="play-btn" onclick="startGame('chess'); return false;">开始游戏</a>
+                </div>
+            </div>
+            
+            <!-- 飞行棋 -->
+            <div class="game-card" onclick="showRules('airplane')">
+                <div class="game-image">
+                    <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="10" y="10" width="80" height="80" rx="5" fill="#E0E0E0"/>
+                        <circle cx="30" cy="30" r="10" fill="#3498DB"/>
+                        <circle cx="70" cy="30" r="10" fill="#2ECC71"/>
+                        <circle cx="30" cy="70" r="10" fill="#E74C3C"/>
+                        <circle cx="70" cy="70" r="10" fill="#F39C12"/>
+                        <path d="M50 10L50 30" stroke="#333" stroke-width="2"/>
+                        <path d="M50 70L50 90" stroke="#333" stroke-width="2"/>
+                        <path d="M10 50L30 50" stroke="#333" stroke-width="2"/>
+                        <path d="M70 50L90 50" stroke="#333" stroke-width="2"/>
+                        <circle cx="50" cy="50" r="5" fill="#333"/>
+                    </svg>
+                </div>
+                <div class="game-info">
+                    <h2>飞行棋</h2>
+                    <p>轻松有趣的休闲棋类游戏，适合各个年龄段的玩家。</p>
+                    <a href="#" class="play-btn" onclick="startGame('airplane'); return false;">开始游戏</a>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- 规则模态框 -->
+    <div class="modal" id="rulesModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>© 2023 游戏导航中心 | 与AI对手一起享受棋类游戏的乐趣</p>
+    </footer>
+    
+    <script>
+        // 打开规则模态框
+        function showRules(game) {
+            const modal = document.getElementById('rulesModal');
+            const modalContent = document.getElementById('modalContent');
+            
+            // 根据游戏类型设置不同的规则内容
+            let rules = '';
+            
+            if (game === 'gomoku') {
+                rules = `
+                    <h2>五子棋规则</h2>
+                    <p>五子棋是一种两人对弈的纯策略型棋类游戏，使用15×15的棋盘，黑白两色的棋子。</p>
+                    <h3>基本规则</h3>
+                    <ul>
+                        <li>双方各执一色棋子(黑与白)，空棋盘开局</li>
+                        <li>黑方先行、白方后行，交替落子，每次只能下一子</li>
+                        <li>棋子必须落在棋盘空白交叉点上，落子后不得移动或拿起</li>
+                        <li>黑方第一枚棋子通常需下在棋盘中心点(天元)</li>
+                        <li>胜负判定以先形成横向、竖向或斜向连续五个同色棋子为胜</li>
+                    </ul>
+                    <h3>禁手规则(专业比赛)</h3>
+                    <ul>
+                        <li>黑棋禁止同时形成两个活三(三三禁手)</li>
+                        <li>黑棋禁止同时形成两个四(四四禁手)</li>
+                        <li>黑棋禁止超过五子的长连(长连禁手)</li>
+                        <li>若黑方违反禁手，则判负；白方无禁手</li>
+                        <li>黑棋仅允许以"冲四活三"(即四三组合)取胜</li>
+                    </ul>
+                `;
+            } else if (game === 'chinesechess') {
+                rules = `
+                    <h2>中国象棋规则</h2>
+                    <p>中国象棋是一种源于古代的传统棋类游戏，使用9×10的棋盘，红黑两色的棋子。</p>
+                    <h3>棋盘与棋子</h3>
+                    <ul>
+                        <li>棋盘由九道直线和十道横线交叉组成，共有九十个交叉点</li>
+                        <li>中间没有划通直线的地方叫做"河界"；划有斜交叉线的地方叫做"九宫"</li>
+                        <li>双方各有十六个棋子，分为七种：将(帅)、士(仕)、象(相)、车、马、炮、兵(卒)</li>
+                    </ul>
+                    <h3>棋子走法</h3>
+                    <ul>
+                        <li><strong>将(帅)</strong>：只能在九宫内行走，每次只能走一格，不能走出九宫</li>
+                        <li><strong>士(仕)</strong>：只能在九宫内斜走一格，可进可退</li>
+                        <li><strong>象(相)</strong>：走"田"字形对角线，不能过河，若田字中心有棋子则不能走</li>
+                        <li><strong>车</strong>：横竖直线任意格数，中间不隔棋子</li>
+                        <li><strong>马</strong>：走"日"字形对角线，若第一步直行处有棋子挡住则不能走</li>
+                        <li><strong>炮</strong>：横竖直线任意格数，吃子时必须跳过一个棋子</li>
+                        <li><strong>兵(卒)</strong>：未过河前只能向前走一格，过河后可左右前各进一格，不能后退</li>
+                    </ul>
+                    <h3>游戏目标</h3>
+                    <p>通过运用各自的棋子，想方设法将对方的首领(将或帅)将死，方为己方胜利。</p>
+                `;
+            } else if (game === 'chess') {
+                rules = `
+                    <h2>国际象棋规则</h2>
+                    <p>国际象棋是一种世界范围内广泛流行的棋类游戏，使用8×8的棋盘，黑白两色的棋子。</p>
+                    <h3>棋盘与棋子</h3>
+                    <ul>
+                        <li>棋盘由8×8=64个深浅相间的方格组成，右下角的方格是白格</li>
+                        <li>双方各有16个棋子，包括王、后、车、象、马、兵六种</li>
+                    </ul>
+                    <h3>棋子走法</h3>
+                    <ul>
+                        <li><strong>王</strong>：横、直、斜走均可，但每次只能走一格，所走到的位置不可有对方棋子的威胁</li>
+                        <li><strong>后</strong>：横、直、斜走均可，格数不限，但不可越过其他棋子</li>
+                        <li><strong>车</strong>：横走或直走，格数不限，但不可斜走，也不可越过其他棋子</li>
+                        <li><strong>象</strong>：斜线移动，格数不限，但不可越过其他棋子</li>
+                        <li><strong>马</strong>：走"日"字，可越子</li>
+                        <li><strong>兵</strong>：向前一步，首次可走两步；吃子时斜向前一步</li>
+                    </ul>
+                    <h3>特殊规则</h3>
+                    <ul>
+                        <li><strong>王车易位</strong>：每局一次，王向车移动两格，车移至王另一侧</li>
+                        <li><strong>吃过路兵</strong>：敌方兵首次走两步时，可斜向前吃掉</li>
+                        <li><strong>兵升变</strong>：兵到达对方底线，可升变为后、车、象或马</li>
+                    </ul>
+                    <h3>胜负判定</h3>
+                    <ul>
+                        <li><strong>将死</strong>：对方王被将且无法逃脱</li>
+                        <li><strong>和棋</strong>：包括无子可动、三次重复局面、50步无吃子或兵移动、双方无法将死对方等</li>
+                    </ul>
+                `;
+            } else if (game === 'airplane') {
+                rules = `
+                    <h2>飞行棋规则</h2>
+                    <p>飞行棋是一种轻松有趣的休闲棋类游戏，适合各个年龄段的玩家。</p>
+                    <h3>基本规则</h3>
+                    <ul>
+                        <li>游戏开始时，所有棋子都位于基地内</li>
+                        <li>只有在掷得6点后，方可将一枚棋子由"基地"起飞至起飞点，并可以再掷骰子一次</li>
+                        <li>玩家轮流掷骰子，根据骰子的点数移动棋子</li>
+                        <li>棋子可以吃掉对方的棋子，被吃掉的棋子需要返回基地</li>
+                        <li>棋子绕棋盘一周后，进入自己的终点区域</li>
+                        <li>率先将所有棋子送入终点区域的玩家获胜</li>
+                    </ul>
+                    <h3>特殊规则</h3>
+                    <ul>
+                        <li>掷得6点可以再掷一次，连续掷得6点三次则失去本次掷骰子的机会</li>
+                        <li>同一颜色的棋子可以叠在一起，形成"火车"，一起移动</li>
+                        <li>棋子进入终点区域后，必须按照准确的点数移动到对应的位置</li>
+                    </ul>
+                `;
+            }
+            
+            modalContent.innerHTML = rules;
+            modal.style.display = 'flex';
+        }
+        
+        // 关闭规则模态框
+        function closeModal() {
+            document.getElementById('rulesModal').style.display = 'none';
+        }
+        
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('rulesModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
+        // 开始游戏
+        function startGame(game) {
+            // 跳转到对应的游戏页面
+            if (game === 'gomoku') {
+                window.location.href = 'gomoku.html';
+            } else if (game === 'chinesechess') {
+                window.location.href = 'chinesechess.html';
+            } else if (game === 'chess') {
+                window.location.href = 'chess.html';
+            } else if (game === 'airplane') {
+                window.location.href = 'airplane.html';
+            }
+        }
+    </script>
+</body>
+</html>

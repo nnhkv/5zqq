@@ -594,14 +594,36 @@
                 let aiScore = 0;
                 let humanScore = 0;
                 
+                // 只评估有棋子周围的位置，减少计算量
                 for (let i = 0; i < BOARD_SIZE; i++) {
                     for (let j = 0; j < BOARD_SIZE; j++) {
                         if (gameBoard[i][j] === 0) {
-                            // 计算AI在这里落子的分数
-                            aiScore += evaluatePosition(i, j, AI_PLAYER);
+                            // 检查周围是否有棋子
+                            let hasNeighbor = false;
+                            for (let dx = -2; dx <= 2; dx++) {
+                                for (let dy = -2; dy <= 2; dy++) {
+                                    if (dx === 0 && dy === 0) continue;
+                                    
+                                    const newRow = i + dx;
+                                    const newCol = j + dy;
+                                    
+                                    if (newRow >= 0 && newRow < BOARD_SIZE && newCol >= 0 && newCol < BOARD_SIZE) {
+                                        if (gameBoard[newRow][newCol] !== 0) {
+                                            hasNeighbor = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (hasNeighbor) break;
+                            }
                             
-                            // 计算人类在这里落子的分数
-                            humanScore += evaluatePosition(i, j, HUMAN_PLAYER);
+                            if (hasNeighbor) {
+                                // 计算AI在这里落子的分数
+                                aiScore += evaluatePosition(i, j, AI_PLAYER);
+                                
+                                // 计算人类在这里落子的分数
+                                humanScore += evaluatePosition(i, j, HUMAN_PLAYER);
+                            }
                         }
                     }
                 }
@@ -610,29 +632,34 @@
                 return aiScore - humanScore * 0.8; // 稍微偏向进攻
             }
             
+            // 缓存，用于存储已经计算过的位置的分数
+            const scoreCache = new Map();
+            // 限制缓存大小，防止内存溢出
+            const MAX_CACHE_SIZE = 1000;
+            
             // 获取AI的最佳落子位置 - 极小极大算法
             function getBestMove() {
                 let bestScore = -Infinity;
                 let bestMove = null;
-                let depth = 3; // 默认搜索深度
+                let depth = 2; // 降低默认搜索深度
                 
                 // 根据难度调整搜索深度和随机性
                 let randomFactor = 0;
                 switch(difficulty) {
                     case 'easy':
-                        depth = 2;
+                        depth = 1;
                         randomFactor = 0.3;
                         break;
                     case 'medium':
-                        depth = 3;
+                        depth = 2;
                         randomFactor = 0.1;
                         break;
                     case 'hard':
-                        depth = 4;
+                        depth = 3;
                         randomFactor = 0.05;
                         break;
                     case 'expert':
-                        depth = 5;
+                        depth = 4;
                         randomFactor = 0;
                         break;
                 }
@@ -665,12 +692,15 @@
             function getPossibleMoves() {
                 const moves = [];
                 const emptyPositions = [];
+                let moveCount = 0;
                 
                 // 找出所有空位
                 for (let i = 0; i < BOARD_SIZE; i++) {
                     for (let j = 0; j < BOARD_SIZE; j++) {
                         if (gameBoard[i][j] === 0) {
                             emptyPositions.push({row: i, col: j});
+                        } else {
+                            moveCount++;
                         }
                     }
                 }
@@ -680,13 +710,20 @@
                     return [{row: Math.floor(BOARD_SIZE / 2), col: Math.floor(BOARD_SIZE / 2)}];
                 }
                 
-                // 只考虑有棋子周围的空位（优化版：考虑更大范围）
+                // 根据游戏阶段调整搜索范围
+                let searchRange = 3;
+                if (moveCount < 10) {
+                    // 游戏早期，缩小搜索范围
+                    searchRange = 2;
+                }
+                
+                // 只考虑有棋子周围的空位
                 for (const pos of emptyPositions) {
                     let hasNeighbor = false;
                     
-                    // 检查周围更大范围
-                    for (let dx = -3; dx <= 3; dx++) {
-                        for (let dy = -3; dy <= 3; dy++) {
+                    // 检查周围范围
+                    for (let dx = -searchRange; dx <= searchRange; dx++) {
+                        for (let dy = -searchRange; dy <= searchRange; dy++) {
                             if (dx === 0 && dy === 0) continue;
                             
                             const newRow = pos.row + dx;
@@ -715,15 +752,43 @@
                 // 按分数排序（降序）
                 moves.sort((a, b) => b.score - a.score);
                 
-                // 只返回前30个高分位置，减少计算量
-                return moves.slice(0, 30);
+                // 根据难度调整返回的位置数量
+                let returnCount = 30;
+                switch(difficulty) {
+                    case 'easy':
+                        returnCount = 10;
+                        break;
+                    case 'medium':
+                        returnCount = 20;
+                        break;
+                    case 'hard':
+                    case 'expert':
+                        returnCount = 30;
+                        break;
+                }
+                
+                return moves.slice(0, returnCount);
             }
             
             // 极小极大算法，带Alpha-Beta剪枝
             function minimax(depth, alpha, beta, isMaximizing) {
                 // 终止条件：达到搜索深度或游戏结束
                 if (depth === 0 || checkWinCondition()) {
-                    return evaluateBoard();
+                    // 尝试使用缓存
+                    const boardKey = JSON.stringify(gameBoard);
+                    if (scoreCache.has(boardKey)) {
+                        return scoreCache.get(boardKey);
+                    }
+                    
+                    const score = evaluateBoard();
+                    // 存储到缓存
+                    if (scoreCache.size >= MAX_CACHE_SIZE) {
+                        // 删除最早添加的缓存项
+                        const firstKey = scoreCache.keys().next().value;
+                        scoreCache.delete(firstKey);
+                    }
+                    scoreCache.set(boardKey, score);
+                    return score;
                 }
                 
                 const possibleMoves = getPossibleMoves();
@@ -733,10 +798,20 @@
                     return 0;
                 }
                 
+                // 排序移动，优先考虑高分位置，增加剪枝效率
+                possibleMoves.sort((a, b) => b.score - a.score);
+                
+                // 对于专家模式，进一步优化搜索
+                let maxMovesToConsider = possibleMoves.length;
+                if (difficulty === 'expert' && possibleMoves.length > 20) {
+                    maxMovesToConsider = 20; // 只考虑前20个最佳位置
+                }
+                
                 if (isMaximizing) {
                     let maxScore = -Infinity;
                     
-                    for (const move of possibleMoves) {
+                    for (let i = 0; i < maxMovesToConsider; i++) {
+                        const move = possibleMoves[i];
                         // 模拟落子
                         gameBoard[move.row][move.col] = AI_PLAYER;
                         
@@ -759,7 +834,8 @@
                 } else {
                     let minScore = Infinity;
                     
-                    for (const move of possibleMoves) {
+                    for (let i = 0; i < maxMovesToConsider; i++) {
+                        const move = possibleMoves[i];
                         // 模拟落子
                         gameBoard[move.row][move.col] = HUMAN_PLAYER;
                         
@@ -806,42 +882,40 @@
                 // 显示思考提示
                 thinkingModal.classList.remove('hidden');
                 
-                // 延迟AI响应，模拟思考时间
-                setTimeout(() => {
-                    const bestMove = getBestMove();
+                // 立即执行，不延迟
+                const bestMove = getBestMove();
+                
+                if (bestMove) {
+                    // 落子
+                    gameBoard[bestMove.row][bestMove.col] = AI_PLAYER;
+                    moveHistory.push({row: bestMove.row, col: bestMove.col, player: AI_PLAYER});
                     
-                    if (bestMove) {
-                        // 落子
-                        gameBoard[bestMove.row][bestMove.col] = AI_PLAYER;
-                        moveHistory.push({row: bestMove.row, col: bestMove.col, player: AI_PLAYER});
-                        
-                        // 绘制棋盘
-                        drawBoard();
-                        
-                        // 检查是否胜利
-                        if (checkWin(bestMove.row, bestMove.col, AI_PLAYER)) {
-                            showWinModal(AI_PLAYER);
-                            thinkingModal.classList.add('hidden');
-                            return;
-                        }
-                        
-                        // 检查是否平局
-                        if (checkDraw()) {
-                            gameActive = false;
-                            stopTimer();
-                            statusText.textContent = '游戏结束 - 平局!';
-                            thinkingModal.classList.add('hidden');
-                            return;
-                        }
-                        
-                        // 切换到玩家回合
-                        currentPlayer = HUMAN_PLAYER;
-                        updateGameStatus();
+                    // 绘制棋盘
+                    drawBoard();
+                    
+                    // 检查是否胜利
+                    if (checkWin(bestMove.row, bestMove.col, AI_PLAYER)) {
+                        showWinModal(AI_PLAYER);
+                        thinkingModal.classList.add('hidden');
+                        return;
                     }
                     
-                    // 隐藏思考提示
-                    thinkingModal.classList.add('hidden');
-                }, 100); // 增加思考时间，让AI看起来更有战略性
+                    // 检查是否平局
+                    if (checkDraw()) {
+                        gameActive = false;
+                        stopTimer();
+                        statusText.textContent = '游戏结束 - 平局!';
+                        thinkingModal.classList.add('hidden');
+                        return;
+                    }
+                    
+                    // 切换到玩家回合
+                    currentPlayer = HUMAN_PLAYER;
+                    updateGameStatus();
+                }
+                
+                // 隐藏思考提示
+                thinkingModal.classList.add('hidden');
             }
             
             // 点击棋盘事件
